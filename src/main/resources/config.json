@@ -1,0 +1,38 @@
+{
+  "CURRENT_PROFILE": "dev",
+  "PROFILES": {
+    "dev": {
+      "PORT": 8085,
+      "dev-mode": true,
+      "templateDir": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/templates-s/en_US",
+      "myTemplateDir": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-templates-s/en_US",
+      "database": {
+        "user": "root",
+        "password": "",
+        "url": "jdbc:mysql://localhost:3306/grocery_db"
+      },
+      "STATIC_DIRECTORY": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/static/",
+      "PUBLIC_DIRECTORY": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/public/",
+      "MY_STATIC_DIRECTORY": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-static/",
+      "MY_PUBLIC_DIRECTORY": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-public/",
+      "UPLOAD_DIRECTORY_BASE": "/home/shahadat/IdeaProjects/grossary/images/",
+      "EXPORT_PAGE_SIZE": 100
+    },
+    "production": {
+      "PORT": 8085,
+      "dev-mode": true,
+      "templateDir": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/templates-s/en_US",
+      "myTemplateDir": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-templates-s/en_US",
+      "database": {
+        "user": "root",
+        "password": "",
+        "url": "jdbc:mysql://localhost:3306/grocery_db"
+      },
+      "STATIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/crm-web/src/main/resources/static/",
+      "PUBLIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/crm-web/src/main/resources/public/",
+      "MY_STATIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/grossary/src/main/resources/my-static/",
+      "MY_PUBLIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/grossary/src/main/resources/my-public/",
+      "UPLOAD_DIRECTORY_BASE": "/media/shahadat/010484A83E84B408/IdeaProjects/grossary/images/"
+    }
+  }
+}
