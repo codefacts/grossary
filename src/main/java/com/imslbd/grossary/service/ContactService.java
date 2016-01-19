@@ -153,33 +153,7 @@ public class ContactService {
 
         Promises.from(sqlFindAllContacts(message))
             .decideAndMap(tpl -> Decision.of((tpl.t3 ? "export" : Decision.OTHERWISE), tpl.dl()))
-            .on("export", tpl21 -> Promises.from(tpl21).mapToPromise(tpl -> tpl.apply((sql, args) -> {
-                String tempTable = "temp_table_" + new Random().ints().map(n -> (n < 0) ? -n : n).findFirst().getAsInt();
-                String Q = "CREATE TEMPORARY TABLE IF NOT EXISTS " + tempTable + " AS (" + sql + ")";
-
-                Defer<SQLConnection> defer = Promises.defer();
-                jdbcClient.getConnection(Util.makeDeferred(defer));
-                return defer.promise().map(con -> Promises.from().map(v -> Tpls.of(con, Q, args, tempTable)).error(e -> con.close()).get());
-            })).mapToPromise(val -> val.apply((con, sql, params, tmpTable) -> {
-                Defer<UpdateResult> rs = Promises.defer();
-
-                con.updateWithParams(sql, params, Util.makeDeferred(rs));
-
-                return rs.promise().error(p -> con.close()).map(up -> Tpls.of(con, up, tmpTable));
-            })).mapToPromise(tpl2 -> tpl2.apply((con, updateResult, tempTable) -> {
-
-                System.out.println(updateResult.toJson());
-
-                Defer<ResultSet> rs = Promises.defer();
-
-                Integer pageSize = MyApp.loadConfig().getInteger("EXPORT_PAGE_SIZE");
-
-                con.query("select * from " + tempTable + " limit 1, " + pageSize, Util.makeDeferred(rs));
-
-                return rs.promise().map(resultSet -> Tpls.of(
-                    resultSet, 1, pageSize, con, tempTable, message)).error(e -> con.close());
-
-            })).mapToPromise(value -> ContactService.this._retrieveAndReply(Promises.from(value)))
+            .on("export", tpl21 -> export(tpl21, message)
                 .error(e -> ExceptionUtil.fail(message, e)))
             .otherwise(data -> Promises.from(data)
                 .mapToPromise(tpl -> {
@@ -203,10 +177,44 @@ public class ContactService {
     }
 
     private Promise<Tpl6<ResultSet, Integer,
-        Integer, SQLConnection, String,
-        Message<JsonObject>>> _retrieveAndReply(Promise<
-        Tpl6<ResultSet,
-            Integer, Integer, SQLConnection,
+        Integer, SQLConnection, String, Message<JsonObject>>> export(Tpl2<String, JsonArray> tpl21, Message<JsonObject> message) {
+        return Promises.from(tpl21)
+            .mapToPromise(tpl -> tpl.apply((sql, params) -> {
+                String tempTable = "temp_table_" + new Random().ints().map(n -> (n < 0) ? -n : n).findFirst().getAsInt();
+                String Q = "CREATE TEMPORARY TABLE IF NOT EXISTS " + tempTable + " AS (" + sql + ")";
+
+                Defer<SQLConnection> defer = Promises.defer();
+                jdbcClient.getConnection(Util.makeDeferred(defer));
+                return defer.promise().map(con -> Promises.from().map(v -> Tpls.of(con, Q, params, tempTable)).error(e -> con.close()).get());
+            }))
+            .mapToPromise(val -> val.apply((con, Q, params, tmpTable) -> {
+                Defer<UpdateResult> rs = Promises.defer();
+
+                con.updateWithParams(Q, params, Util.makeDeferred(rs));
+
+                return rs.promise().error(p -> con.close()).map(updateResult -> Tpls.of(con, updateResult, tmpTable));
+            }))
+            .mapToPromise(tpl2 -> tpl2.apply((con, updateResult, tempTable) -> {
+
+                System.out.println(updateResult.toJson());
+
+                Defer<ResultSet> rs = Promises.defer();
+
+                Integer pageSize = MyApp.loadConfig().getInteger("EXPORT_PAGE_SIZE");
+
+                con.query("select * from " + tempTable + " limit 1, " + pageSize, Util.makeDeferred(rs));
+
+                return rs.promise().map(resultSet -> Tpls.of(
+                    resultSet, 1, pageSize, con, tempTable, message)).error(e -> con.close());
+
+            }))
+            .mapToPromise(value -> retrieveAndReply(Promises.from(value)));
+    }
+
+    private Promise<Tpl6<ResultSet, Integer,
+        Integer, SQLConnection, String, Message<JsonObject>>>
+    retrieveAndReply(Promise<
+        Tpl6<ResultSet, Integer, Integer, SQLConnection,
             String, Message<JsonObject>>> from) {
 
         return from.map(tpl -> tpl.apply((rs, offset, size, con, tempTable, msg) -> {
@@ -250,7 +258,7 @@ public class ContactService {
                 return Promises.from(null);
             }
 
-            return _retrieveAndReply(Promises.from(Tpls.of(
+            return retrieveAndReply(Promises.from(Tpls.of(
                 resultSet, offset, size, con, tmpTable, msg)));
         }));
     }
