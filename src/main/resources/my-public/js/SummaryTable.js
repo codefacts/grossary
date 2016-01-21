@@ -36,7 +36,7 @@ site.reactjs.SummaryTable = React.createClass({
         var cols = [
             {width: width + 'px', label: 'Grocery', name: 'grocery'},
             {width: width + 'px', label: 'Location', name: 'location'},
-            {width: width + 'px', label: 'Poin', name: 'posNo'},
+            {width: width + 'px', label: 'Point', name: 'posNo'},
             {width: width + 'px', label: 'Total', name: 'totalCount', apply: $this.makeLink},
             {width: width + 'px', label: 'Today', name: 'todayCount'},
         ].map(function (col) {
@@ -98,6 +98,6 @@ site.reactjs.SummaryTable = React.createClass({
         return height - 60;
     },
     bodyHeight: function () {
-        return $(window).height() - 52;
+        return $(window).height() - 100;
     }
 });

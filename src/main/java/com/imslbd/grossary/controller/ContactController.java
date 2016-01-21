@@ -2,19 +2,32 @@ package com.imslbd.grossary.controller;
 
 import com.imslbd.grossary.MyEvents;
 import com.imslbd.grossary.MyUris;
-import com.imslbd.grossary.util.MyUtil;
+import io.crm.promise.Decision;
 import io.crm.promise.Promises;
-import io.crm.promise.intfs.Defer;
+import io.crm.promise.intfs.MapToHandler;
+import io.crm.promise.intfs.SuccessHandler;
 import io.crm.util.Util;
+import io.crm.web.util.Converters;
 import io.crm.web.util.WebUtils;
+import io.crm.web.util.printers.CsvExporter;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.imslbd.grossary.MyEvents.CONTACTS_SUMMARY;
+import static com.imslbd.grossary.MyEvents.GROUP_BY_COUNT_CONTACTS;
+import static io.crm.util.Util.as;
+import static io.crm.web.util.WebUtils.*;
 
 /**
  * Created by shahadat on 1/10/16.
@@ -36,14 +49,57 @@ public class ContactController {
     }
 
     private void groupByCount(Router router) {
-        router.get(MyUris.CONTACTS_GROUP_BY_COUNT.value).handler(ctx -> {
-            Util.<JsonArray>send(vertx.eventBus(), MyEvents.GROUP_BY_COUNT, null)
-                .map(Message::body)
-                .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
-                .then(js -> ctx.response().end(js.encodePrettily()))
-                .error(ctx::fail)
-            ;
-        });
+
+        Route handler = router.get(MyUris.CONTACTS_GROUP_BY_COUNT.value).handler(ctx ->
+            Promises.from(ctx.request().params())
+                .map(prms -> prms.contains("export") ? "export"
+                    : prms.contains("exportFlat") ? "exportFlat" : Decision.OTHERWISE)
+                .decide(dec -> dec)
+                .on("exportFlat", val -> Util.<Buffer>send(vertx.eventBus(),
+                    GROUP_BY_COUNT_CONTACTS, toJson(ctx.request().params()))
+                    .then(m -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE,
+                        Controllers.APPLICATION_OCTET_STREAM)
+                        .putHeader(Controllers.CONTENT_DISPOSITION,
+                            "attachment; filename=export.csv;"))
+                    .then(msg -> Controllers.exportLoop(msg, ctx)))
+
+                .on("export", val1 -> Util.<JsonArray>send(vertx.eventBus(),
+                    GROUP_BY_COUNT_CONTACTS, toJson(ctx.request().params()))
+                    .map(message -> message.body())
+
+                    .then(js -> ctx.response()
+                        .putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_OCTET_STREAM)
+                        .putHeader(Controllers.CONTENT_DISPOSITION, WebUtils.attachmentFilename("summary.csv")))
+
+                    .then(js -> {
+                        if (js.size() > 0) {
+                            Map<String, String> map = new LinkedHashMap<>();
+                            map.put("grocery", "Grocery");
+                            map.put("location", "Location");
+                            map.put("posNo", "Pos No");
+                            map.put("todayCount", "Today");
+                            map.put("totalCount", "Total");
+                            CsvExporter exporter = new CsvExporter(map);
+
+                            Buffer buffer = Buffer.buffer(1024 * 4);
+                            exporter.writeHeader(buffer);
+                            exporter.writeData(js.getList(), buffer);
+                            ctx.response().end(buffer);
+
+                        } else {
+                            ctx.response().end();
+                        }
+                    })
+
+                    .error(ctx::fail))
+
+                .otherwise(
+                    val1 -> Util.<JsonArray>send(vertx.eventBus(), MyEvents.GROUP_BY_COUNT_CONTACTS, WebUtils.toJson(ctx.request().params()))
+                        .map(Message::body)
+                        .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
+                        .then(js -> ctx.response().end(js.encodePrettily()))
+                        .error(ctx::fail))
+                .error(ctx::fail));
     }
 
     private void contactsCountByDate(Router router) {
@@ -59,64 +115,34 @@ public class ContactController {
 
     private void contacts(Router router) {
         router.get(MyUris.CONTACTS.value).handler(ctx -> {
-            boolean export = Boolean.parseBoolean(ctx.request().params().get("export"));
 
-            ctx.request().params().remove("/contacts").remove("_");
+            boolean export = Converters.toBoolean(ctx.request().params().get("export"));
 
-            if (export) {
+            ctx.request().params().remove("_");
 
-                Promises.from()
-                    .mapToPromise(v -> Util.<Buffer>send(vertx.eventBus(),
+            Promises.from(export)
+                .decide(expt -> expt ? "export" : Decision.OTHERWISE)
+                .on("export",
+                    v -> Util.<Buffer>send(vertx.eventBus(),
                         MyEvents.FIND_ALL_CONTACTS,
-                        WebUtils.toJson(ctx.request().params())))
-                    .then(m -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE,
-                        Controllers.APPLICATION_OCTET_STREAM)
-                        .putHeader(Controllers.CONTENT_DISPOSITION,
-                            "attachment; filename=export.csv;").setChunked(true))
-                    .then(m -> {
-                        respondAndReplyLoop(m, ctx);
-                    })
-                    .error(ctx::fail);
-
-            } else {
-                Promises.from()
-                    .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(),
+                        toJson(ctx.request().params()))
+                        .then(m -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE,
+                            Controllers.APPLICATION_OCTET_STREAM)
+                            .putHeader(Controllers.CONTENT_DISPOSITION,
+                                "attachment; filename=export.csv;"))
+                        .then(m -> Controllers.exportLoop(m, ctx))
+                        .error(ctx::fail))
+                .otherwise(
+                    v -> Util.<JsonObject>send(vertx.eventBus(),
                         MyEvents.FIND_ALL_CONTACTS,
-                        WebUtils.toJson(ctx.request().params())))
-                    .map(message -> message.body())
-                    .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
-                    .then(js -> ctx.response().end(js.encodePrettily()))
-                    .error(ctx::fail)
-                ;
-            }
+                        toJson(ctx.request().params()))
+                        .map(message -> message.body())
+                        .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
+                        .then(js -> ctx.response().end(js.encodePrettily()))
+                        .error(ctx::fail))
+                .error(ctx::fail)
+            ;
         });
-    }
-
-    private void respondAndReplyLoop(Message<Buffer> msg, RoutingContext ctx) {
-        try {
-            System.out.println("BUFFER: LENGHT: " + (msg.body() == null ? "NULL" : msg.body().length()));
-            if (msg.body() == null || msg.body().length() <= 0) {
-                ctx.response().end();
-                System.out.println("DONE EXPORT");
-                return;
-            }
-
-            ctx.response().write(msg.body());
-
-            Defer<Message<Buffer>> defer = Promises.defer();
-
-            defer.promise().then(message -> {
-                System.out.println("CONTINUE");
-                respondAndReplyLoop(message, ctx);
-            }).error(ctx::fail).error(e -> System.out.println(Thread.currentThread()));
-
-            System.out.println("CONTROLLER: REPLYING...");
-            msg.reply(null, Util.makeDeferred(defer));
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            ctx.fail(ex);
-        }
     }
 
     public void groceries(Router router) {
@@ -124,7 +150,7 @@ public class ContactController {
             Promises.from()
                 .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(),
                     MyEvents.FIND_ALL_CONTACTS_GROCERIES,
-                    WebUtils.toJson(ctx.request().params())))
+                    toJson(ctx.request().params())))
                 .map(message -> message.body())
                 .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
                 .then(js -> ctx.response().end(js.encodePrettily()))
@@ -137,7 +163,7 @@ public class ContactController {
             Promises.from()
                 .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(),
                     MyEvents.FIND_ALL_CONTACTS_LOCATIONS,
-                    WebUtils.toJson(ctx.request().params())))
+                    toJson(ctx.request().params())))
                 .map(message -> message.body())
                 .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
                 .then(js -> ctx.response().end(js.encodePrettily()))
@@ -150,7 +176,7 @@ public class ContactController {
             Promises.from()
                 .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(),
                     MyEvents.FIND_ALL_CONTACTS_POS_NOS,
-                    WebUtils.toJson(ctx.request().params())))
+                    toJson(ctx.request().params())))
                 .map(message -> message.body())
                 .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
                 .then(js -> ctx.response().end(js.encodePrettily()))
@@ -163,7 +189,7 @@ public class ContactController {
             Promises.from()
                 .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(),
                     MyEvents.FIND_CONTACTS_DATE_MIN_MAX,
-                    WebUtils.toJson(ctx.request().params())))
+                    toJson(ctx.request().params())))
                 .map(message -> message.body())
                 .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
                 .then(js -> ctx.response().end(js.encodePrettily()))
@@ -172,28 +198,53 @@ public class ContactController {
     }
 
     public void summary(Router router) {
-        router.get(MyUris.CONTACTS_SUMMARY.value).handler(ctx -> {
+        router.get(MyUris.CONTACTS_SUMMARY.value).handler(ctx ->
             Promises.from()
-                .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(),
-                    MyEvents.CONTACTS_SUMMARY,
-                    WebUtils.toJson(ctx.request().params())))
-                .map(message -> message.body())
-                .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
-                .then(js -> ctx.response().end(js.encodePrettily()))
-                .error(ctx::fail);
-        });
+                .mapToPromise(val1 -> Util.<JsonObject>send(vertx.eventBus(),
+                    CONTACTS_SUMMARY,
+                    toJson(ctx.request().params()))
+                    .map(message -> message.body())
+                    .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
+                    .then(js -> ctx.response().end(js.encodePrettily())))
+                .error(ctx::fail));
     }
 
     public void summaryDetails(Router router) {
         router.get(MyUris.CONTACTS_SUMMARY_DETAILS.value).handler(ctx -> {
-            ctx.request().params().remove("_");
-            Promises.from()
-                .mapToPromise(v -> Util.<JsonArray>send(vertx.eventBus(),
+            Promises.from(ctx.request().params())
+                .then(prms -> prms.remove("_"))
+                .map(prms -> prms.contains("export"))
+                .decide(val -> val ? "export" : Decision.OTHERWISE)
+                .on("export", val1 -> Util.<JsonArray>send(vertx.eventBus(),
                     MyEvents.CONTACTS_SUMMARY_DETAILS,
-                    WebUtils.toJson(ctx.request().params())))
-                .map(message -> message.body())
-                .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
-                .then(js -> ctx.response().end(js.encodePrettily()))
+                    toJson(ctx.request().params()))
+                    .map(Message::body)
+                    .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_OCTET_STREAM)
+                        .putHeader(Controllers.CONTENT_DISPOSITION, WebUtils.attachmentFilename("summary.csv")))
+                    .map(js -> {
+                        Map map = new JsonObject()
+                            .put("grocery", "Grocery")
+                            .put("location", "Location")
+                            .put("posNo", "Pos No")
+                            .put("date", "Date")
+                            .put("totalCount", "Total").getMap();
+
+                        CsvExporter csvExporter = new CsvExporter(map);
+
+                        Buffer buffer = Buffer.buffer(1024 * 4);
+                        csvExporter.writeHeader(buffer);
+                        csvExporter.writeData(js.getList(), buffer);
+                        return buffer;
+                    })
+                    .then(buffer -> ctx.response().end((Buffer) buffer))
+                    .error(ctx::fail))
+                .otherwise(val2 -> Util.<JsonArray>send(vertx.eventBus(),
+                    MyEvents.CONTACTS_SUMMARY_DETAILS,
+                    toJson(ctx.request().params()))
+                    .map(Message::body)
+                    .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
+                    .then(js -> ctx.response().end(js.encodePrettily()))
+                    .error(ctx::fail))
                 .error(ctx::fail);
         });
     }

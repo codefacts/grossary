@@ -13,10 +13,6 @@ import java.io.InputStream;
  * Created by someone on 12/11/2015.
  */
 public class MyApp {
-    public static final int MIN_PAGE_SIZE = 5;
-    public static final int DEFAULT_PAGE_SIZE = 20;
-    public static final int MAX_PAGE_SIZE = 100;
-    public static final String IMAGE_DIRECTORY = "IMAGE_DIRECTORY";
     private static final JsonObject config = loadConfig();
     private static final String CONFIG_FILE_NAME = "config.json";
     private static final String CURRENT_PROFILE = "CURRENT_PROFILE";
@@ -40,8 +36,8 @@ public class MyApp {
                     config = new JsonObject(IOUtils.toString(inputStream));
                 }
                 return config
-                        .getJsonObject(PROFILES, new JsonObject())
-                        .getJsonObject(config.getString(CURRENT_PROFILE), new JsonObject());
+                    .getJsonObject(PROFILES, new JsonObject())
+                    .getJsonObject(config.getString(CURRENT_PROFILE), new JsonObject());
             } else return config;
         } catch (IOException e) {
             throw new RuntimeException(e);

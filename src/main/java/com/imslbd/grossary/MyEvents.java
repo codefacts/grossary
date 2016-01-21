@@ -16,6 +16,6 @@ public class MyEvents {
     public static final String SAVE_BYTEARRAY = "SAVE_BYTEARRAY";
     public static final String CONTACTS_COUNT_BY_DATE = "CONTACTS_COUNT_BY_DATE";
     public static final String CONTACTS_SUMMARY = "CONTACTS_SUMMARY";
-    public static final String GROUP_BY_COUNT = "GROUP_BY_COUNT";
+    public static final String GROUP_BY_COUNT_CONTACTS = "GROUP_BY_COUNT_CONTACTS";
     public static final String CONTACTS_SUMMARY_DETAILS = "CONTACTS_SUMMARY_DETAILS";
 }

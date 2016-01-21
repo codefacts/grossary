@@ -25,11 +25,15 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
+import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+import io.vertx.ext.web.handler.sockjs.PermittedOptions;
+import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import io.vertx.ext.web.sstore.SessionStore;
 
@@ -60,6 +64,13 @@ final public class MainVerticle extends AbstractVerticle {
         SessionHandler sessionHandler = SessionHandler.create(store);
         router.route().handler(sessionHandler);
 
+        BridgeOptions bridgeOptions = new BridgeOptions();
+        bridgeOptions.setInboundPermitted(Arrays.asList(inboundPermitteds()));
+        bridgeOptions.setOutboundPermitted(Arrays.asList(outboundPermitteds()));
+
+        router.route("/eventbus/*").handler(SockJSHandler.create(vertx)
+            .bridge(bridgeOptions));
+
         //Register Listeners
         registerFilters(router);
 
@@ -69,10 +80,18 @@ final public class MainVerticle extends AbstractVerticle {
 
         registerControllers(router);
 
-        getVertx().createHttpServer().requestHandler(router::accept).listen(PORT);
+        HttpServer server = getVertx().createHttpServer().requestHandler(router::accept).listen(PORT);
 
         System.out.println("<----------------------------------WEB_SERVER_STARTED------------------------------------->");
         System.out.println("PORT: " + PORT);
+    }
+
+    private PermittedOptions outboundPermitteds() {
+        return new PermittedOptions().setAddressRegex(".+");
+    }
+
+    private PermittedOptions inboundPermitteds() {
+        return new PermittedOptions().setAddressRegex(".+");
     }
 
     private void initialize() {
@@ -127,7 +146,7 @@ final public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().consumer(MyEvents.FIND_ALL_CONTACTS, contactService::findContacts);
         vertx.eventBus().consumer(MyEvents.CONTACTS_COUNT_BY_DATE, contactService::countByDate);
         vertx.eventBus().consumer(MyEvents.CONTACTS_SUMMARY, contactService::contactsSummary);
-        vertx.eventBus().consumer(MyEvents.GROUP_BY_COUNT, contactService::groupByCount);
+        vertx.eventBus().consumer(MyEvents.GROUP_BY_COUNT_CONTACTS, contactService::groupByCount);
         vertx.eventBus().consumer(MyEvents.CONTACTS_SUMMARY_DETAILS, contactService::summaryDetails);
     }
 
@@ -221,6 +240,8 @@ final public class MainVerticle extends AbstractVerticle {
         new CRUDController(vertx, router);
 
         new ContactController(vertx, router);
+
+        new SiteController(vertx, router);
     }
 
     private void otherwiseController(final Router router) {
