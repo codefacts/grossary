@@ -8,7 +8,6 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
     },
     getInitialState: function () {
         return this.interceptState({
-            bodyHeight: this.bodyHeight(),
             data: this.props.data,
             __render: true
         });
@@ -16,15 +15,12 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
     componentDidMount: function () {
         var $this = this;
         $this.props.onInit($this);
-        $(window).bind("resize", $this.onWindowResize);
     },
     componentWillUnmount: function () {
         var $this = this;
-        $(window).unbind("resize", $this.onWindowResize);
     },
     onWindowResize: function () {
         var $this = this;
-        $this.setState({bodyHeight: $this.bodyHeight(), __render: !$this.state.__render});
     },
     shouldComponentUpdate: function (nextProps, nextState) {
         return this.state.__render !== nextState.__render;
@@ -35,7 +31,7 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
 
         var cols = [
             {
-                width: '100px', label: 'Signatue', name: 'signature', apply: function (name) {
+                label: 'Signatue', name: 'signature', apply: function (name) {
                 return (<img style={{width: '90px'}} src={'/app_data/images/' + name}/>)
             }
             },
@@ -59,19 +55,17 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
             });
 
         return (
-            <div className="table-responsive TablePrimary"
-                 style={{border: '1px solid #ddd', height: $this.state.bodyHeight + 'px'}}>
+            <div className="table-responsive TablePrimary">
 
                 <table className="table table-stripped table-bordered table-hover MainTable"
-                       style={{marginTop: '37px', height: $this.tableHeight($this.state.bodyHeight) + 'px',
-                       display:'block', border: 0, borderTop: '1px solid #ddd'}}>
+                       style={{border: 0, borderTop: '1px solid #ddd'}}>
 
-                    <thead style={{display: 'block', position: 'absolute', top: '0', left: '16px'}}>
+                    <thead>
 
                     <tr>
                         {cols.map(function (col) {
                             return (<th key={col.name}
-                                        style={{minWidth: col.width, maxWidth: col.width, borderBottom: 0}}>{col.label}</th>);
+                                        style={{borderBottom: 0}}>{col.label}</th>);
                         })}
                     </tr>
                     </thead>
@@ -83,7 +77,7 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
                                     <tr key={v.id}>
                                         {cols.map(function (col) {
                                             return (<td key={col.name}
-                                                        style={{minWidth: col.width, maxWidth: col.width, borderBottom: 0}}>{col.apply(v[col.name])}</td>);
+                                                        style={{borderBottom: 0}}>{col.apply(v[col.name])}</td>);
                                         })}
                                     </tr>
                                 );
@@ -94,13 +88,6 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
                 </table>
             </div>
         );
-    },
-
-    tableHeight: function (height) {
-        return height - 60;
-    },
-    bodyHeight: function () {
-        return $(window).height() - 52;
     },
     updateData: function (data) {
         var $this = this;

@@ -3,7 +3,7 @@
   "PROFILES": {
     "dev": {
       "PORT": 8085,
-      "dev-mode": true,
+      "dev-mode": false,
       "templateDir": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/templates-s/en_US",
       "myTemplateDir": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-templates-s/en_US",
       "database": {

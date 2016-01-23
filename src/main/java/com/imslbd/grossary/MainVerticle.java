@@ -1,6 +1,7 @@
 package com.imslbd.grossary;
 
 import com.imslbd.grossary.controller.*;
+import com.imslbd.grossary.service.AuthService;
 import com.imslbd.grossary.service.CRUDService;
 import com.imslbd.grossary.service.ContactService;
 import com.imslbd.grossary.service.FileUploaderService;
@@ -29,6 +30,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
@@ -114,17 +116,8 @@ final public class MainVerticle extends AbstractVerticle {
     private void registerEvents() {
 
         final EventBus eventBus = vertx.eventBus();
-        eventBus.consumer(ApiEvents.LOGIN_API, (Message<JsonObject> m) -> {
-
-            m.reply(new JsonObject()
-                .put(QC.username, "Sohan")
-                .put(QC.userId, "br-124")
-                .put(User.mobile, "01553661069")
-                .put(QC.userType,
-                    new JsonObject()
-                        .put(QC.id, 1)
-                        .put(QC.name, "Programmer")));
-        });
+        AuthService authService = new AuthService(vertx, jdbcClient);
+        eventBus.consumer(ApiEvents.LOGIN_API, authService::login);
 
         final HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions()
             .setDefaultHost("localhost").setDefaultPort(3276));
@@ -230,7 +223,14 @@ final public class MainVerticle extends AbstractVerticle {
     private void registerControllers(final Router router) {
 
         loginFormController(router);
-        new AuthController(vertx, router);
+        AuthController authController = new AuthController(vertx, router);
+        com.imslbd.grossary.controller.AuthController authController1 = new com.imslbd.grossary.controller.AuthController(vertx, router);
+        authController.logout(router);
+//        authController.sessionCount(router);
+
+        authController1.login(router);
+        authController1.currentUser(router);
+
         new GoogleMapController(router);
 
         //App controller

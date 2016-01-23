@@ -22,7 +22,8 @@ public enum MyUris {
     CONTACTS_SUMMARY("/contacts/summary", ""),
     CONTACTS_SUMMARY_DETAILS("/contacts/summaryDetails", ""),
     CONTACTS_GROUP_BY_COUNT("/contacts/groupByCount", ""),
-    CONTACTS_COUNT_BY_DATE("/contacts/countByDate", "");
+    CONTACTS_COUNT_BY_DATE("/contacts/countByDate", ""),
+    CURRENT_USER("/currentUser", "");
 
     public final String value;
     public final String label;

@@ -9,7 +9,6 @@ site.reactjs.TablePrimary = React.createClass({
     },
     getInitialState: function () {
         return this.interceptState({
-            bodyHeight: this.bodyHeight(),
             data: this.props.data,
             __render: true
         });
@@ -17,15 +16,12 @@ site.reactjs.TablePrimary = React.createClass({
     componentDidMount: function () {
         var $this = this;
         $this.props.onInit($this);
-        $(window).bind("resize", $this.onWindowResize);
     },
     componentWillUnmount: function () {
         var $this = this;
-        $(window).unbind("resize", $this.onWindowResize);
     },
     onWindowResize: function () {
         var $this = this;
-        $this.setState({bodyHeight: $this.bodyHeight(), __render: !$this.state.__render});
     },
     shouldComponentUpdate: function (nextProps, nextState) {
         return this.state.__render !== nextState.__render;
