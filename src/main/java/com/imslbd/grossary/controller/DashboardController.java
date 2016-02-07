@@ -20,18 +20,18 @@ public class DashboardController {
     private void index(Router router) {
         router.get(MyUris.DASHBOARD.value).handler(ctx -> {
             ctx.response().end(
-                    new PageTmptBuilder("Call Center")
-                            .body(new SiteTmpt())
-                            .build().render()
+                new PageTmptBuilder("Grocery")
+                    .body(new SiteTmpt())
+                    .build().render()
             );
         });
     }
 
     public static void main(String... args) {
         System.out.println(
-                new PageTmptBuilder("Call Center")
-                        .body(new SiteTmpt())
-                        .build().render()
+            new PageTmptBuilder("Call Center")
+                .body(new SiteTmpt())
+                .build().render()
         );
     }
 }

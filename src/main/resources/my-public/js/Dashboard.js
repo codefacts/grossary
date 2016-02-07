@@ -81,7 +81,8 @@ site.reactjs.Dashboard = React.createClass({
                         </div>
                         <div className="panel-body">
                             {!!char.data.length ?
-                                <site.reactjs.MorrisBar id="morris-bar-chart" style={{height: '450px', width: '100px'}}
+                                <site.reactjs.MorrisBar id="morris-bar-chart"
+                                                        style={{height: '450px'}}
                                                         barConfig={char}/> : ""}
                         </div>
                     </div>

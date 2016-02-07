@@ -20,12 +20,10 @@ import org.watertemplate.Template;
 
 import java.nio.file.Paths;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import static io.crm.util.Util.getOrDefault;
 
 /**
  * Created by someone on 12/11/2015.
@@ -94,7 +92,7 @@ public class MyUtil {
     }
 
     public static final Date parseDate(String val) {
-        final String string = getOrDefault(val, "").trim();
+        final String string = Util.or(val, "").trim();
         if (string.matches(GLOBAL_DATE_FORMAT_PATTERN)) {
             return ExceptionUtil.toRuntimeCall(() -> DATE_FORMAT_THREAD_LOCAL.get().parse(string));
         } else if (string.matches(GLOBAL_DATETIME_FORMAT_PATTERN)) {
@@ -107,7 +105,7 @@ public class MyUtil {
     }
 
     public static final Date parseDate(String val, Date defaultValue) {
-        final String string = getOrDefault(val, "").trim();
+        final String string = Util.or(val, "").trim();
         if (string.matches(GLOBAL_DATE_FORMAT_PATTERN)) {
             return ExceptionUtil.toRuntimeCall(() -> DATE_FORMAT_THREAD_LOCAL.get().parse(string));
         } else if (string.matches(GLOBAL_DATETIME_FORMAT_PATTERN)) {
@@ -134,7 +132,7 @@ public class MyUtil {
     }
 
     public static Tpl2<String, String> splitPair(String valuePair, String regex) {
-        final String aDefault = Util.getOrDefault(valuePair, "");
+        final String aDefault = Util.or(valuePair, "");
         final String[] split = aDefault.split(regex, 2);
         return Tpls.of(split[0], split.length > 1 ? split[1] : "");
     }

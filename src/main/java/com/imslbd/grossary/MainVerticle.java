@@ -1,10 +1,8 @@
 package com.imslbd.grossary;
 
 import com.imslbd.grossary.controller.*;
-import com.imslbd.grossary.service.AuthService;
-import com.imslbd.grossary.service.CRUDService;
-import com.imslbd.grossary.service.ContactService;
-import com.imslbd.grossary.service.FileUploaderService;
+import com.imslbd.grossary.service.*;
+import com.imslbd.grossary.template.page.MyLoginTemplate;
 import io.crm.QC;
 import io.crm.model.User;
 import io.crm.promise.Promises;
@@ -23,10 +21,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
@@ -119,9 +114,6 @@ final public class MainVerticle extends AbstractVerticle {
         AuthService authService = new AuthService(vertx, jdbcClient);
         eventBus.consumer(ApiEvents.LOGIN_API, authService::login);
 
-        final HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions()
-            .setDefaultHost("localhost").setDefaultPort(3276));
-
         FileUploaderService fileUploaderService = new FileUploaderService(vertx);
         vertx.eventBus().consumer(MyEvents.SAVE_BYTEARRAY, fileUploaderService::saveByteArray);
 
@@ -141,6 +133,13 @@ final public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().consumer(MyEvents.CONTACTS_SUMMARY, contactService::contactsSummary);
         vertx.eventBus().consumer(MyEvents.GROUP_BY_COUNT_CONTACTS, contactService::groupByCount);
         vertx.eventBus().consumer(MyEvents.CONTACTS_SUMMARY_DETAILS, contactService::summaryDetails);
+
+
+        HttpClient httpClient = vertx.createHttpClient(new HttpClientOptions()
+            .setDefaultHost(MyApp.loadConfig().getString("CALL_REVIEW_HOST"))
+            .setDefaultPort(MyApp.loadConfig().getInteger("CALL_REVIEW_PORT")));
+        CallCenterService callCenterService = new CallCenterService(httpClient);
+        vertx.eventBus().consumer(MyEvents.CALL_CENTER_SUPERVISOR_QUERY, callCenterService::callCenterSupervisorQuery);
     }
 
     private void registerFilters(final Router router) {
@@ -155,7 +154,7 @@ final public class MainVerticle extends AbstractVerticle {
                 .set(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .set(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS, "POST, GET, OPTIONS, DELETE")
                 .set(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600")
-                .set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "x-requested-with")
+                .set(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, "Accept, Authorization, X-Requested-With")
             ;
             context.next();
         });
@@ -174,9 +173,13 @@ final public class MainVerticle extends AbstractVerticle {
 
     private void authFilter(final Router router) {
 
-        router.route().handler(context -> {
+        router.route().handler(ctx -> {
+            if (ctx.request().method() == HttpMethod.OPTIONS) {
+                ctx.response().end();
+                return;
+            }
             if (System.getProperty("dev-mode") != null) {
-                context.session().put(ss.currentUser,
+                ctx.session().put(ss.currentUser,
                     new JsonObject()
                         .put(QC.username, "Sohan")
                         .put(QC.userId, "br-124")
@@ -186,11 +189,11 @@ final public class MainVerticle extends AbstractVerticle {
                                 .put(QC.id, 1)
                                 .put(QC.name, "Programmer")));
             }
-            if (context.session().get(ss.currentUser) != null) {
-                context.next();
+            if (ctx.session().get(ss.currentUser) != null) {
+                ctx.next();
                 return;
-            } else if (GroceryController.authToken.equals(context.request().getHeader(HttpHeaders.AUTHORIZATION.toString()))) {
-                context.session().put(ss.currentUser,
+            } else if (GroceryController.authToken.equals(ctx.request().getHeader(HttpHeaders.AUTHORIZATION.toString()))) {
+                ctx.session().put(ss.currentUser,
                     new JsonObject()
                         .put(QC.username, "anonymous")
                         .put(QC.userId, "anonym-16424562")
@@ -199,37 +202,38 @@ final public class MainVerticle extends AbstractVerticle {
                             new JsonObject()
                                 .put(QC.id, 15)
                                 .put(QC.name, "")));
-                context.next();
+                ctx.next();
                 return;
             }
-            final String uri = context.request().uri();
+            final String uri = ctx.request().uri();
 
             if (publicUris.stream().filter(publicUri -> uri.startsWith(publicUri)).findAny().isPresent()) {
-                context.next();
+                ctx.next();
                 return;
             }
             //Auth Failed
-            if ("XMLHttpRequest".equalsIgnoreCase(context.request().headers().get("X-Requested-With"))) {
-                context.response().setStatusCode(HttpResponseStatus.FORBIDDEN.code())
+            if ("XMLHttpRequest".equalsIgnoreCase(ctx.request().headers().get("X-Requested-With"))) {
+                ctx.response().setStatusCode(HttpResponseStatus.FORBIDDEN.code())
                     .end("Please login to authorize your request.");
                 return;
             }
-            context.response().setStatusCode(HttpResponseStatus.TEMPORARY_REDIRECT.code());
-            context.response().headers().set(HttpHeaders.LOCATION, Uris.LOGIN.value);
-            context.response().end();
+            ctx.response().setStatusCode(HttpResponseStatus.TEMPORARY_REDIRECT.code());
+            ctx.response().headers().set(HttpHeaders.LOCATION, Uris.LOGIN.value);
+            ctx.response().end();
         });
     }
 
     private void registerControllers(final Router router) {
 
         loginFormController(router);
-        AuthController authController = new AuthController(vertx, router);
-        com.imslbd.grossary.controller.AuthController authController1 = new com.imslbd.grossary.controller.AuthController(vertx, router);
-        authController.logout(router);
+        AuthController authCtrl = new AuthController(vertx, router);
+        authCtrl.logout(router);
 //        authController.sessionCount(router);
 
-        authController1.login(router);
-        authController1.currentUser(router);
+        com.imslbd.grossary.controller.AuthController authController = new com.imslbd.grossary.controller.AuthController(vertx, router);
+        authController.login(router);
+        authController.currentUser(router);
+        authController.isCallAgent(router);
 
         new GoogleMapController(router);
 
@@ -242,6 +246,11 @@ final public class MainVerticle extends AbstractVerticle {
         new ContactController(vertx, router);
 
         new SiteController(vertx, router);
+
+        //
+        CallCenterSupervisorController callCenterSupervisorController = new CallCenterSupervisorController(vertx, router);
+        callCenterSupervisorController.index(vertx, router);
+
     }
 
     private void otherwiseController(final Router router) {
@@ -264,7 +273,7 @@ final public class MainVerticle extends AbstractVerticle {
 
             context.response().end(
                 new PageBuilder("Login")
-                    .body(new LoginTemplate())
+                    .body(new MyLoginTemplate())
                     .build().render());
         });
     }

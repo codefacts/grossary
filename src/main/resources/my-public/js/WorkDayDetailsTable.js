@@ -44,9 +44,17 @@ site.reactjs.WorkDayDetailsTable = React.createClass({
             {width: '200px', label: 'Location', name: 'location'},
             {width: '100px', label: 'Pos No', name: 'posNo'},
             {width: '150px', label: 'Address', name: 'address'},
-            {width: '100px', label: 'Date', name: 'date', apply: function (date) {
+            {
+                width: '100px', label: 'Date', name: 'date', apply: function (date) {
                 return formatDate(new Date(date));
-            }},
+            }
+            },
+            {
+                width: '100px', label: 'Date And Time', name: 'fullDate', apply: function (date) {
+				if(!date) return ""; 
+                return formatTimeAmPm(new Date(date));
+            }
+            },
         ].map(function (col) {
                 col.apply = !col.apply ? function (s) {
                     return s

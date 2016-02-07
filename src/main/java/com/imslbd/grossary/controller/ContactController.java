@@ -6,6 +6,7 @@ import io.crm.promise.Decision;
 import io.crm.promise.Promises;
 import io.crm.promise.intfs.MapToHandler;
 import io.crm.promise.intfs.SuccessHandler;
+import io.crm.util.ExceptionUtil;
 import io.crm.util.Util;
 import io.crm.web.util.Converters;
 import io.crm.web.util.WebUtils;
@@ -19,13 +20,17 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.imslbd.grossary.MyEvents.CONTACTS_SUMMARY;
 import static com.imslbd.grossary.MyEvents.GROUP_BY_COUNT_CONTACTS;
+import static io.crm.util.Util.accept;
+import static io.crm.util.Util.apply;
 import static io.crm.util.Util.as;
 import static io.crm.web.util.WebUtils.*;
 
@@ -233,7 +238,12 @@ public class ContactController {
 
                         Buffer buffer = Buffer.buffer(1024 * 4);
                         csvExporter.writeHeader(buffer);
-                        csvExporter.writeData(js.getList(), buffer);
+                        accept(((List<JsonObject>) js.getList()), list ->
+                            list.forEach(jso -> {
+                                ExceptionUtil.toRuntime(() ->
+                                    jso.put("date", Util.formatDate(Util.parseIsoDate(jso.getString("date")), "")));
+                                csvExporter.writeData(jso, buffer);
+                            }));
                         return buffer;
                     })
                     .then(buffer -> ctx.response().end((Buffer) buffer))

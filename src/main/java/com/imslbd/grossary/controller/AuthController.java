@@ -1,6 +1,7 @@
 package com.imslbd.grossary.controller;
 
 import com.imslbd.grossary.MyUris;
+import com.imslbd.grossary.model.UserType;
 import com.imslbd.grossary.ss;
 import com.imslbd.grossary.util.StatusRange;
 import io.crm.promise.Decision;
@@ -16,6 +17,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+
+import java.util.HashMap;
 
 /**
  * Created by shahadat on 1/23/16.
@@ -33,13 +36,31 @@ public class AuthController {
             .mapToPromise(v -> Util.<JsonObject>send(vertx.eventBus(), ApiEvents.LOGIN_API,
                 WebUtils.toJson(ctx.request().params())))
             .map(m -> m.body())
-            .decideAndMap(js -> Decision.of(js.getInteger("statusCode", 1) >= StatusRange.ERROR_STARTS ? "Error" : Decision.OTHERWISE, js))
-            .on("Error", val -> ctx.response().setStatusCode(HttpResponseStatus.UNAUTHORIZED.code()).end(val.encodePrettily()))
+            .decideAndMap(js -> Decision.of(js.getInteger("statusCode", 1) >= StatusRange.ERROR_STARTS
+                ? "Error" : Decision.OTHERWISE, js))
+            .on("Error", val -> ctx.response().setStatusCode(HttpResponseStatus.UNAUTHORIZED.code())
+                .end(val.encodePrettily()))
             .otherwise(user -> {
                 ctx.session().put(ST.currentUser, user);
-                ctx.response().end(ST.ok);
+                ctx.session().put(ST.IS_CALL_AGENT, ctx.request().params().get(ST.IS_CALL_AGENT));
+                ctx.response().end(dashboardUrl(user));
             })
             .error(ctx::fail));
+    }
+
+    private String dashboardUrl(JsonObject user) {
+
+        HashMap<Long, String> map = new HashMap<>();
+        map.put(UserType.CALL_CENTER_SUPERVISOR.id(), "/callCenterSupervisor");
+        map.put(UserType.ADMIN.id(), "/dashboard");
+
+        return map.get(user.getLong("userTypeId"));
+    }
+
+    public void isCallAgent(Router router) {
+        router.get(MyUris.IS_CALL_AGENT.value).handler(ctx -> {
+            ctx.response().end(ctx.session().get(ST.IS_CALL_AGENT).toString());
+        });
     }
 
     public void currentUser(Router router) {

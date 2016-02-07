@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import static com.imslbd.grossary.util.MyUtil.parseDate;
 import static com.imslbd.grossary.util.SqlUtils.escf;
 import static io.crm.util.Util.apply;
+import static io.crm.util.Util.toIsoShortString;
 import static io.crm.util.Util.toIsoString;
 import static io.crm.web.util.WebUtils.query;
 
@@ -191,8 +192,8 @@ public class ContactService {
 
         String dateCond = MyUtil.splitPair(date, ":").apply((s1, s2) -> {
             if (!s1.trim().isEmpty() && !s2.trim().isEmpty()) {
-                dbArgs.add(toIsoString(parseDate(s1)));
-                dbArgs.add(toIsoString(parseDate(s2)));
+                dbArgs.add(toIsoShortString(parseDate(s1)));
+                dbArgs.add(toIsoShortString(parseDate(s2)));
                 return "`date` between ? and ?";
             } else if (!s1.trim().isEmpty()) {
                 dbArgs.add(toIsoString(parseDate(s1)));

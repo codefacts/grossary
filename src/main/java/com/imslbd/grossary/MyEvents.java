@@ -18,4 +18,5 @@ public class MyEvents {
     public static final String CONTACTS_SUMMARY = "CONTACTS_SUMMARY";
     public static final String GROUP_BY_COUNT_CONTACTS = "GROUP_BY_COUNT_CONTACTS";
     public static final String CONTACTS_SUMMARY_DETAILS = "CONTACTS_SUMMARY_DETAILS";
+    public static final String CALL_CENTER_SUPERVISOR_QUERY = "FIND_CENTER_SUPERVISOR_QUERY";
 }

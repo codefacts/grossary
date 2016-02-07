@@ -1,15 +1,12 @@
 package com.imslbd.grossary.service;
 
 import com.imslbd.grossary.MyApp;
-import io.crm.util.ExceptionUtil;
+import io.crm.util.touple.immutable.*;
 import io.crm.web.util.printers.CsvExporter;
 import io.crm.promise.Promises;
 import io.crm.promise.intfs.Defer;
 import io.crm.promise.intfs.Promise;
 import io.crm.util.Util;
-import io.crm.util.touple.immutable.Tpl2;
-import io.crm.util.touple.immutable.Tpl6;
-import io.crm.util.touple.immutable.Tpls;
 import io.crm.web.util.WebUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -21,9 +18,10 @@ import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLConnection;
 import io.vertx.ext.sql.UpdateResult;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -53,7 +51,8 @@ public class Services {
 
                 con.updateWithParams(Q, params, Util.makeDeferred(rs));
 
-                return rs.promise().error(p -> con.close()).map(updateResult -> Tpls.of(con, updateResult, tmpTable));
+                return rs.promise().error(p -> con.close()).map(updateResult -> Tpls.of(
+                    con, updateResult, tmpTable));
             }))
             .mapToPromise(tpl2 -> tpl2.apply((con, updateResult, tempTable) -> {
 
@@ -69,27 +68,30 @@ public class Services {
                     resultSet, 1, pageSize, con, tempTable, message)).error(e -> con.close());
 
             }))
-            .mapToPromise(value -> retrieveAndReply(value, vertx));
-    }
-
-    public static Promise<Tpl6<ResultSet, Integer,
-        Integer, SQLConnection, String, Message<JsonObject>>>
-    retrieveAndReply(
-        Tpl6<ResultSet, Integer, Integer, SQLConnection,
-            String, Message<JsonObject>> tpl6, Vertx vertx) {
-
-        return Promises.from(tpl6)
-            .map(tpl -> tpl.apply((rs, offset, size, con, tempTable, msg) -> {
+            .mapToPromise(tpl6 -> {
 
                 Buffer buffer = Buffer.buffer(1024 * 4);
 
-                CsvExporter csvExporter = new CsvExporter(rs.getColumnNames().stream()
+                CsvExporter csvExporter = new CsvExporter(tpl6.t1.getColumnNames().stream()
                     .collect(Collectors.toMap(s -> s, WebUtils::toTitle, (s, s2) -> s, LinkedHashMap::new)));
 
 
                 csvExporter.writeHeader(buffer);
 
-                rs.getRows().stream().map(js -> js.put("date", toRuntimeCall(() -> Util.formatDate(parseMongoDate(js.getString("date")), ""))))
+                return retrieveAndReply(tpl6.ps(buffer), csvExporter, vertx);
+            });
+    }
+
+    public static Promise<Tpl6<ResultSet, Integer,
+        Integer, SQLConnection, String, Message<JsonObject>>>
+    retrieveAndReply(
+        Tpl7<ResultSet, Integer, Integer, SQLConnection,
+            String, Message<JsonObject>, Buffer> tpl7, CsvExporter csvExporter, Vertx vertx) {
+
+        return Promises.from(tpl7)
+            .map(tpl -> tpl.apply((rs, offset, size, con, tempTable, msg, buffer) -> {
+
+                rs.getRows().stream().map(js -> js.put("date", toRuntimeCall(() -> Util.formatDate(Util.parseIsoDate(js.getString("date")), ""))))
                     .forEach(entries -> csvExporter.writeData(entries, buffer));
 
                 return Tpls.of(buffer, offset + size, size, con, tempTable, msg);
@@ -124,7 +126,32 @@ public class Services {
                 }
 
                 return retrieveAndReply(Tpls.of(
-                    resultSet, offset, size, con, tmpTable, msg), vertx);
+                    resultSet, offset, size, con, tmpTable, msg, Buffer.buffer(1024 * 4)), csvExporter, vertx);
             }));
+    }
+
+    public static void main(String... args) {
+        Vertx vertx = Vertx.vertx();
+        JDBCClient jdbcClient = JDBCClient.createShared(vertx, MyApp.dbConfig());
+        WebUtils.query("select * from contacts where date < '2016-01-25 14:14:00'", jdbcClient)
+            .then(rs -> {
+                List<JsonObject> rows = rs.getRows();
+                List<Promise<UpdateResult>> promiseList = new ArrayList<>();
+                rows.stream().forEach(js -> {
+                    try {
+                        String s1 = "update contacts set fullDate = '"
+                            + Util.toMySqlDateString(Util.parseIsoDate(js.getString("date")), "") + "' ";
+                        s1 += "where id = " + js.getLong("id");
+                        final String sql = s1;
+
+//                        System.out.println(sql);
+                        promiseList.add(WebUtils.update(sql, jdbcClient).complete(p -> System.out.println(sql)));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                });
+                Promises.when(promiseList).complete(p -> System.out.println(p));
+            })
+        ;
     }
 }

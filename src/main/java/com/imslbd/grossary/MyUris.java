@@ -23,7 +23,7 @@ public enum MyUris {
     CONTACTS_SUMMARY_DETAILS("/contacts/summaryDetails", ""),
     CONTACTS_GROUP_BY_COUNT("/contacts/groupByCount", ""),
     CONTACTS_COUNT_BY_DATE("/contacts/countByDate", ""),
-    CURRENT_USER("/currentUser", "");
+    CURRENT_USER("/currentUser", ""), IS_CALL_AGENT("/isCallAgent", ""), CALL_CENTER_SUPERVISOR("/callCenterSupervisor", "");
 
     public final String value;
     public final String label;

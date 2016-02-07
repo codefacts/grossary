@@ -9,14 +9,16 @@
       "database": {
         "user": "root",
         "password": "",
-        "url": "jdbc:mysql://localhost:3306/grocery_db"
+        "url": "jdbc:mysql://localhost:3306/call_center_db"
       },
       "STATIC_DIRECTORY": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/static/",
       "PUBLIC_DIRECTORY": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/public/",
       "MY_STATIC_DIRECTORY": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-static/",
       "MY_PUBLIC_DIRECTORY": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-public/",
       "UPLOAD_DIRECTORY_BASE": "/home/shahadat/IdeaProjects/grossary/images/",
-      "EXPORT_PAGE_SIZE": 100
+      "EXPORT_PAGE_SIZE": 100,
+      "CALL_REVIEW_PORT": 4001,
+      "CALL_REVIEW_HOST": "182.160.99.116"
     },
     "production": {
       "PORT": 8085,
@@ -26,7 +28,7 @@
       "database": {
         "user": "root",
         "password": "",
-        "url": "jdbc:mysql://localhost:3306/grocery_db"
+        "url": "jdbc:mysql://localhost:3306/call_center_db"
       },
       "STATIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/crm-web/src/main/resources/static/",
       "PUBLIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/crm-web/src/main/resources/public/",
