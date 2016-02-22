@@ -33,6 +33,8 @@ import static io.crm.util.Util.parseMongoDate;
  */
 public class Services {
 
+    public static final String CALL_CENTER_JAVA = "call-center-java";
+
     public static Promise<Tpl6<ResultSet, Integer, Integer, SQLConnection, String, Message<JsonObject>>>
     exportLoop(Tpl2<String, JsonArray> tpl21, Message<JsonObject> message, JDBCClient jdbcClient, Vertx vertx) {
         return Promises.from(tpl21)

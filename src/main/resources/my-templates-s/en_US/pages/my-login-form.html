@@ -41,6 +41,7 @@
             method: 'post',
             data: $("#loginForm").serialize(),
             success: function(rsp) {
+                console.log('Redirecting to: ' + rsp);
                 location.href = rsp;
             },
             error: function(e) {

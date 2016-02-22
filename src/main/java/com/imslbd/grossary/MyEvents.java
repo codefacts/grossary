@@ -18,5 +18,9 @@ public class MyEvents {
     public static final String CONTACTS_SUMMARY = "CONTACTS_SUMMARY";
     public static final String GROUP_BY_COUNT_CONTACTS = "GROUP_BY_COUNT_CONTACTS";
     public static final String CONTACTS_SUMMARY_DETAILS = "CONTACTS_SUMMARY_DETAILS";
-    public static final String CALL_CENTER_SUPERVISOR_QUERY = "FIND_CENTER_SUPERVISOR_QUERY";
+
+    public static final String REGION_WISE_CALL_SUMMARY = "REGION_WISE_CALL_SUMMARY";
+    public static final String AREA_WISE_CALL_SUMMARY = "AREA_WISE_CALL_SUMMARY";
+    public static final String DISTRIBUTION_HOUSE_WISE_CALL_SUMMARY = "DISTRIBUTION_HOUSE_WISE_CALL_SUMMARY";
+    public static final String BR_WISE_CALL_SUMMARY = "BR_WISE_CALL_SUMMARY";
 }

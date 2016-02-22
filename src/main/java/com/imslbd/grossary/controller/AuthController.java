@@ -48,6 +48,18 @@ public class AuthController {
             .error(ctx::fail));
     }
 
+    public void logout(final Router router) {
+        router.get(Uris.LOGOUT.value).handler(context -> {
+            Promises.from()
+                .then(v -> {
+                    context.session().destroy();
+                    WebUtils.redirect(Uris.LOGIN.value, context.response());
+                })
+                .error(context::fail)
+            ;
+        });
+    }
+
     private String dashboardUrl(JsonObject user) {
 
         HashMap<Long, String> map = new HashMap<>();

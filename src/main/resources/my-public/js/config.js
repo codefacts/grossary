@@ -1,1 +1,1 @@
-window.site = {reactjs: {}, hash: HashParams()}
+window.site = {reactjs: {CallCenterSupervisor: {}}, hash: HashParams()}

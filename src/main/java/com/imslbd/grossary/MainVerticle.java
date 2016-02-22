@@ -14,18 +14,15 @@ import io.crm.web.controller.AuthController;
 import io.crm.web.controller.GoogleMapController;
 import io.crm.web.statichandler.StaticHandler;
 import io.crm.web.template.PageBuilder;
-import io.crm.web.template.page.LoginTemplate;
 import io.crm.web.util.RspList;
 import io.crm.web.util.WebUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
@@ -61,12 +58,8 @@ final public class MainVerticle extends AbstractVerticle {
         SessionHandler sessionHandler = SessionHandler.create(store);
         router.route().handler(sessionHandler);
 
-        BridgeOptions bridgeOptions = new BridgeOptions();
-        bridgeOptions.setInboundPermitted(Arrays.asList(inboundPermitteds()));
-        bridgeOptions.setOutboundPermitted(Arrays.asList(outboundPermitteds()));
-
         router.route("/eventbus/*").handler(SockJSHandler.create(vertx)
-            .bridge(bridgeOptions));
+            .bridge(bridgeOptions()));
 
         //Register Listeners
         registerFilters(router);
@@ -81,6 +74,14 @@ final public class MainVerticle extends AbstractVerticle {
 
         System.out.println("<----------------------------------WEB_SERVER_STARTED------------------------------------->");
         System.out.println("PORT: " + PORT);
+    }
+
+    private BridgeOptions bridgeOptions() {
+        return new BridgeOptions()
+            .addInboundPermitted(new PermittedOptions().setAddress(MyEvents.REGION_WISE_CALL_SUMMARY))
+            .addInboundPermitted(new PermittedOptions().setAddress(MyEvents.AREA_WISE_CALL_SUMMARY))
+            .addInboundPermitted(new PermittedOptions().setAddress(MyEvents.DISTRIBUTION_HOUSE_WISE_CALL_SUMMARY))
+            .addInboundPermitted(new PermittedOptions().setAddress(MyEvents.BR_WISE_CALL_SUMMARY));
     }
 
     private PermittedOptions outboundPermitteds() {
@@ -139,7 +140,10 @@ final public class MainVerticle extends AbstractVerticle {
             .setDefaultHost(MyApp.loadConfig().getString("CALL_REVIEW_HOST"))
             .setDefaultPort(MyApp.loadConfig().getInteger("CALL_REVIEW_PORT")));
         CallCenterService callCenterService = new CallCenterService(httpClient);
-        vertx.eventBus().consumer(MyEvents.CALL_CENTER_SUPERVISOR_QUERY, callCenterService::callCenterSupervisorQuery);
+        vertx.eventBus().consumer(MyEvents.REGION_WISE_CALL_SUMMARY, callCenterService::regionWiseCallSummary);
+        vertx.eventBus().consumer(MyEvents.AREA_WISE_CALL_SUMMARY, callCenterService::areaWiseCallSummary);
+        vertx.eventBus().consumer(MyEvents.DISTRIBUTION_HOUSE_WISE_CALL_SUMMARY, callCenterService::distributionHouseWiseCallSummary);
+        vertx.eventBus().consumer(MyEvents.BR_WISE_CALL_SUMMARY, callCenterService::brWiseCallSummary);
     }
 
     private void registerFilters(final Router router) {
@@ -227,27 +231,28 @@ final public class MainVerticle extends AbstractVerticle {
 
         loginFormController(router);
         AuthController authCtrl = new AuthController(vertx, router);
-        authCtrl.logout(router);
+//        authCtrl.logout(router);
 //        authController.sessionCount(router);
 
         com.imslbd.grossary.controller.AuthController authController = new com.imslbd.grossary.controller.AuthController(vertx, router);
         authController.login(router);
+        authController.logout(router);
         authController.currentUser(router);
         authController.isCallAgent(router);
 
         new GoogleMapController(router);
 
         //App controller
-        new DashboardController(vertx, router);
+//        new DashboardController(vertx, router);
 
-        new GroceryController(vertx, router);
-        new CRUDController(vertx, router);
+//        new GroceryController(vertx, router);
+//        new CRUDController(vertx, router);
 
-        new ContactController(vertx, router);
+//        new ContactController(vertx, router);
 
-        new SiteController(vertx, router);
+//        new SiteController(vertx, router);
 
-        //
+        //CallCenterSupervisor
         CallCenterSupervisorController callCenterSupervisorController = new CallCenterSupervisorController(vertx, router);
         callCenterSupervisorController.index(vertx, router);
 
@@ -256,7 +261,7 @@ final public class MainVerticle extends AbstractVerticle {
     private void otherwiseController(final Router router) {
         router.get("/").handler(context -> {
             if (WebUtils.isLoggedIn(context.session())) {
-                WebUtils.redirect(Uris.DASHBOARD.value, context.response());
+                WebUtils.redirect(MyUris.CALL_CENTER_SUPERVISOR.value, context.response());
             } else {
                 WebUtils.redirect(Uris.LOGIN.value, context.response());
             }
@@ -266,7 +271,7 @@ final public class MainVerticle extends AbstractVerticle {
     private void loginFormController(final Router router) {
         router.get(Uris.LOGIN.value).handler(context -> {
             if (WebUtils.isLoggedIn(context.session())) {
-                WebUtils.redirect(Uris.DASHBOARD.value, context.response());
+                WebUtils.redirect(MyUris.CALL_CENTER_SUPERVISOR.value, context.response());
                 return;
             }
             context.response().headers().set(CONTENT_TYPE, TEXT_HTML);
