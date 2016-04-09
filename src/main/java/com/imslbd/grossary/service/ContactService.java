@@ -294,7 +294,7 @@ public class ContactService {
             })
             .map(js -> Tpls.of(js.getMap().keySet().stream().map(k -> escf(k) + " = ?").collect(Collectors.joining(" and ")),
                 js.getMap().values().stream().collect(Collectors.toList())))
-            .mapToPromise(params -> params.apply((where, objects) -> WebUtils.queryWithParams(
+            .mapToPromise(params -> params.apply((where, objects) -> WebUtils.query(
                 "select grocery, location, posNo, " + escf("date") + ", count(id) as totalCount " +
                     "from contacts " +
                     (where.trim().isEmpty() ? "" : "where " + where) +

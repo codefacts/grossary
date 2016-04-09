@@ -29,6 +29,13 @@ site.reactjs.Step2 = React.createClass({
 
                 </div>
 
+                <div className="col-md-12">
+                    <a href={'/contacts/groupByCount?exportFlat=true&' + site.hash.serialize(site.hash.params())}
+                       className="btn btn-primary pull-right" style={{marginTop: '5px'}}>Flat Export</a>
+                    <a href={'/contacts/groupByCount?export=true&' + site.hash.serialize(site.hash.params())}
+                       className="btn btn-primary pull-right" style={{marginTop: '5px', marginRight: '10px'}}>Export</a>
+                </div>
+
             </div>
         );
     },

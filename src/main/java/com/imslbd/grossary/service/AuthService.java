@@ -25,7 +25,7 @@ public class AuthService {
 
     public void login(Message<JsonObject> message) {
         Promises.from(message.body())
-            .mapToPromise(auth -> WebUtils.queryWithParams("select * from users where username = ?",
+            .mapToPromise(auth -> WebUtils.query("select * from users where username = ?",
                 new JsonArray().add(auth.getString("username")), jdbcClient))
             .decideAndMap(rs -> Decision.of(rs.getNumRows() < 1 ? "user_not_found" : Decision.OTHERWISE, rs))
             .on("user_not_found", val -> message.reply(

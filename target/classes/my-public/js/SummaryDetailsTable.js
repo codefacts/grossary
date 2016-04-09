@@ -8,28 +8,22 @@ site.reactjs.SummaryDetailsTable = React.createClass({
     },
     getInitialState: function () {
         return {
-            bodyHeight: this.bodyHeight(),
             __render: true
         };
     },
     componentDidMount: function () {
         var $this = this;
         $this.props.onInit($this);
-        $(window).bind("resize", $this.onWindowResize);
     },
     componentWillUnmount: function () {
         var $this = this;
-        $(window).unbind("resize", $this.onWindowResize);
     },
     onWindowResize: function () {
         var $this = this;
-        $this.setState({bodyHeight: $this.bodyHeight(), __render: !$this.state.__render});
     },
     render: function () {
         var $this = this;
         var data = $this.props.data;
-
-        var width = $(window).width() - 20;
 
         width = width / 5;
 
@@ -48,18 +42,17 @@ site.reactjs.SummaryDetailsTable = React.createClass({
 
         return (
             <div className="table-responsive TablePrimary"
-                 style={{border: '1px solid #ddd', height: $this.state.bodyHeight + 'px'}}>
+                 style={{border: '1px solid #ddd'}}>
 
                 <table className="table table-stripped table-bordered table-hover MainTable"
-                       style={{marginTop: '37px', height: $this.tableHeight($this.state.bodyHeight) + 'px',
-                       display:'block', border: 0, borderTop: '1px solid #ddd'}}>
+                       style={{border: 0, borderTop: '1px solid #ddd'}}>
 
-                    <thead style={{display: 'block', position: 'absolute', top: '0', left: '16px'}}>
+                    <thead>
 
                     <tr>
                         {cols.map(function (col) {
                             return (<th key={col.name}
-                                        style={{minWidth: col.width, maxWidth: col.width, borderBottom: 0}}>{col.label}</th>);
+                                        style={{borderBottom: 0}}>{col.label}</th>);
                         })}
                     </tr>
                     </thead>
@@ -72,7 +65,7 @@ site.reactjs.SummaryDetailsTable = React.createClass({
                                     <tr key={Math.random()}>
                                         {cols.map(function (col) {
                                             return (<td key={col.name}
-                                                        style={{minWidth: col.width, maxWidth: col.width, borderBottom: 0}}>{col.apply(v[col.name])}</td>);
+                                                        style={{borderBottom: 0}}>{col.apply(v[col.name])}</td>);
                                         })}
                                     </tr>
                                 );
@@ -87,10 +80,4 @@ site.reactjs.SummaryDetailsTable = React.createClass({
     formatDate: function (date) {
         return formatDate(new Date(date));
     },
-    tableHeight: function (height) {
-        return height - 60;
-    },
-    bodyHeight: function () {
-        return $(window).height() - 100;
-    }
 });

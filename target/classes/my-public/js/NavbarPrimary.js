@@ -1,4 +1,12 @@
 site.reactjs.NavbarPrimary = React.createClass({
+    getInitialState: function () {
+        return {
+            user: {}
+        };
+    },
+    componentDidMount: function () {
+        this.getUser();
+    },
     render: function () {
         return (
             <nav className="navbar navbar-default" style={{marginBottom: 0}}>
@@ -12,7 +20,7 @@ site.reactjs.NavbarPrimary = React.createClass({
                                 className="icon-bar"></span>
                         </button>
 
-                        <a className="navbar-brand" href="#">Username</a>
+                        <a className="navbar-brand" href="#">{this.state.username}</a>
                     </div>
 
                     <div className="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -48,5 +56,17 @@ site.reactjs.NavbarPrimary = React.createClass({
                 </div>
             </nav>
         );
+    },
+    getUser: function () {
+        var $this = this;
+        $.ajax({
+            url: '/currentUser',
+            cache: false,
+            success: function (user) {
+                $this.setState({
+                    user: user
+                });
+            },
+        });
     }
 });

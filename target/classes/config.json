@@ -3,36 +3,39 @@
   "PROFILES": {
     "dev": {
       "PORT": 8085,
-      "dev-mode": true,
+      "dev-mode": false,
       "templateDir": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/templates-s/en_US",
       "myTemplateDir": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-templates-s/en_US",
       "database": {
         "user": "root",
         "password": "",
-        "url": "jdbc:mysql://localhost:3306/grocery_db"
+        "url": "jdbc:mysql://localhost:3306/call_center_db"
       },
       "STATIC_DIRECTORY": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/static/",
       "PUBLIC_DIRECTORY": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/public/",
       "MY_STATIC_DIRECTORY": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-static/",
       "MY_PUBLIC_DIRECTORY": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-public/",
       "UPLOAD_DIRECTORY_BASE": "/home/shahadat/IdeaProjects/grossary/images/",
-      "EXPORT_PAGE_SIZE": 100
+      "EXPORT_PAGE_SIZE": 100,
+      "CALL_REVIEW_PORT": 8014,
+      "CALL_REVIEW_HOST": "182.160.99.116",
+      "HEADER_STYLES": {
+        "REACT_BOOTSTRAP_TABLE": "/static/components/react-bootstrap-table-1.5.0/css/react-bootstrap-table-all.min.css"
+      },
+      "HEADER_SCRIPTS": {
+        "REACT_BOOTSTRAP_TABLE": "/static/components/react-bootstrap-table-1.5.0/dist/react-bootstrap-table.min.js"
+      },
+      "BABEL_SCRIPTS": {
+        "CALL_CENTER_SUPER_VISOR_NAV_BAR": "/my-public/js/CallCenterSupervisor/Navbar.js",
+        "REGISTER_EVENTBUS_HANDLERS_SCRIPT": "/my-public/js/register-eventbus-handlers.js",
+        "CallCenterSupervisor.RegionsComponent": "/my-public/js/CallCenterSupervisor/Regions.js",
+        "CallCenterSupervisor.AreasComponent": "/my-public/js/CallCenterSupervisor/Areas.js",
+        "CallCenterSupervisor.DistributinHousesComponent": "/my-public/js/CallCenterSupervisor/DistributionHouses.js",
+        "CallCenterSupervisor.BrsComponent": "/my-public/js/CallCenterSupervisor/Brs.js",
+        "CallCenterSupervisorComponent": "/my-public/js/CallCenterSupervisor.js"
+      }
     },
     "production": {
-      "PORT": 8085,
-      "dev-mode": true,
-      "templateDir": "/home/shahadat/IdeaProjects/crm-web/src/main/resources/templates-s/en_US",
-      "myTemplateDir": "/home/shahadat/IdeaProjects/grossary/src/main/resources/my-templates-s/en_US",
-      "database": {
-        "user": "root",
-        "password": "",
-        "url": "jdbc:mysql://localhost:3306/grocery_db"
-      },
-      "STATIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/crm-web/src/main/resources/static/",
-      "PUBLIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/crm-web/src/main/resources/public/",
-      "MY_STATIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/grossary/src/main/resources/my-static/",
-      "MY_PUBLIC_DIRECTORY": "/media/shahadat/010484A83E84B408/IdeaProjects/grossary/src/main/resources/my-public/",
-      "UPLOAD_DIRECTORY_BASE": "/media/shahadat/010484A83E84B408/IdeaProjects/grossary/images/"
     }
   }
 }

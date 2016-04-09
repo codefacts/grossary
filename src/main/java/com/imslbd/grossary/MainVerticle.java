@@ -4,7 +4,6 @@ import com.imslbd.grossary.controller.*;
 import com.imslbd.grossary.service.*;
 import com.imslbd.grossary.template.page.MyLoginTemplate;
 import io.crm.QC;
-import io.crm.model.User;
 import io.crm.promise.Promises;
 import io.crm.web.ApiEvents;
 import io.crm.web.Uris;
@@ -144,6 +143,9 @@ final public class MainVerticle extends AbstractVerticle {
         vertx.eventBus().consumer(MyEvents.AREA_WISE_CALL_SUMMARY, callCenterService::areaWiseCallSummary);
         vertx.eventBus().consumer(MyEvents.DISTRIBUTION_HOUSE_WISE_CALL_SUMMARY, callCenterService::distributionHouseWiseCallSummary);
         vertx.eventBus().consumer(MyEvents.BR_WISE_CALL_SUMMARY, callCenterService::brWiseCallSummary);
+
+
+
     }
 
     private void registerFilters(final Router router) {
@@ -187,7 +189,7 @@ final public class MainVerticle extends AbstractVerticle {
                     new JsonObject()
                         .put(QC.username, "Sohan")
                         .put(QC.userId, "br-124")
-                        .put(User.mobile, "01553661069")
+                        .put(QC.mobile, "01553661069")
                         .put(QC.userType,
                             new JsonObject()
                                 .put(QC.id, 1)
@@ -201,7 +203,7 @@ final public class MainVerticle extends AbstractVerticle {
                     new JsonObject()
                         .put(QC.username, "anonymous")
                         .put(QC.userId, "anonym-16424562")
-                        .put(User.mobile, "")
+                        .put(QC.mobile, "")
                         .put(QC.userType,
                             new JsonObject()
                                 .put(QC.id, 15)
