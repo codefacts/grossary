@@ -27,14 +27,14 @@ public class AuthService {
         Promises.from(message.body())
             .mapToPromise(auth -> WebUtils.query("select * from users where username = ?",
                 new JsonArray().add(auth.getString("username")), jdbcClient))
-            .decideAndMap(rs -> Decision.of(rs.getNumRows() < 1 ? "user_not_found" : Decision.OTHERWISE, rs))
+            .decideAndMap(rs -> Decision.of(rs.getNumRows() < 1 ? "user_not_found" : Decision.CONTINUE, rs))
             .on("user_not_found", val -> message.reply(
                 new JsonObject()
                     .put("statusCode", StatusCodes.USER_NOT_FOUND_ERROR.statusCode())
                     .put("status", StatusCodes.USER_NOT_FOUND_ERROR)
                     .put("message", StatusCodes.USER_NOT_FOUND_ERROR.message())
             ))
-            .otherwise(rs -> {
+            .contnue(rs -> {
                 if (!rs.getRows().get(0).getString("password")
                     .equals(message.body().getString("password"))) {
                     message.reply(new JsonObject()

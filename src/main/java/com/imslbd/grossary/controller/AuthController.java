@@ -13,7 +13,6 @@ import io.crm.web.Uris;
 import io.crm.web.util.WebUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -37,10 +36,10 @@ public class AuthController {
                 WebUtils.toJson(ctx.request().params())))
             .map(m -> m.body())
             .decideAndMap(js -> Decision.of(js.getInteger("statusCode", 1) >= StatusRange.ERROR_STARTS
-                ? "Error" : Decision.OTHERWISE, js))
+                ? "Error" : Decision.CONTINUE, js))
             .on("Error", val -> ctx.response().setStatusCode(HttpResponseStatus.UNAUTHORIZED.code())
                 .end(val.encodePrettily()))
-            .otherwise(user -> {
+            .contnue(user -> {
                 ctx.session().put(ST.currentUser, user);
                 ctx.session().put(ST.IS_CALL_AGENT, ctx.request().params().get(ST.IS_CALL_AGENT));
                 ctx.response().end(dashboardUrl(user));

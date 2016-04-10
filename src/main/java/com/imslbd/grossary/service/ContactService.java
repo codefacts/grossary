@@ -146,10 +146,10 @@ public class ContactService {
     public void findContacts(Message<JsonObject> message) {
 
         Promises.from(sqlFindAllContacts(message))
-            .decideAndMap(tpl -> Decision.of((tpl.t3 ? "export" : Decision.OTHERWISE), tpl.dl()))
+            .decideAndMap(tpl -> Decision.of((tpl.t3 ? "export" : Decision.CONTINUE), tpl.dl()))
             .on("export", tpl2 -> Services.exportLoop(tpl2, message, jdbcClient, vertx)
                 .error(e -> ExceptionUtil.fail(message, e)))
-            .otherwise(data -> Promises.from(data)
+            .contnue(data -> Promises.from(data)
                 .mapToPromise(tpl -> {
                     Defer<SQLConnection> defer = Promises.defer();
                     jdbcClient.getConnection(Util.makeDeferred(defer));
@@ -246,14 +246,14 @@ public class ContactService {
     public void groupByCount(Message<JsonObject> message) {
 
         Promises.from(message.body())
-            .decide(entries -> entries.containsKey("exportFlat") ? "exportFlat" : Decision.OTHERWISE)
+            .decide(entries -> entries.containsKey("exportFlat") ? "exportFlat" : Decision.CONTINUE)
             .on("exportFlat", val1 -> {
                 Services.exportLoop(Tpls.of("select grocery, location, posNo, " + escf("date") + ", count(*) as totalCount " +
                     "from contacts " +
                     "group by grocery, location, posNo, " + escf("date") + " " +
                     "order by grocery, location, posNo, " + escf("date"), Util.EMPTY_JSON_ARRAY), message, jdbcClient, vertx);
             })
-            .otherwise(val2 -> Promises
+            .contnue(val2 -> Promises
                 .when(
                     WebUtils.query("select grocery, location, posNo, count(id) as totalCount " +
                         "from contacts " +

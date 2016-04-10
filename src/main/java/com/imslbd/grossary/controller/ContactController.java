@@ -4,8 +4,6 @@ import com.imslbd.grossary.MyEvents;
 import com.imslbd.grossary.MyUris;
 import io.crm.promise.Decision;
 import io.crm.promise.Promises;
-import io.crm.promise.intfs.MapToHandler;
-import io.crm.promise.intfs.SuccessHandler;
 import io.crm.util.ExceptionUtil;
 import io.crm.util.Util;
 import io.crm.web.util.Converters;
@@ -20,18 +18,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 
-import java.text.ParseException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.imslbd.grossary.MyEvents.CONTACTS_SUMMARY;
 import static com.imslbd.grossary.MyEvents.GROUP_BY_COUNT_CONTACTS;
 import static io.crm.util.Util.accept;
-import static io.crm.util.Util.apply;
-import static io.crm.util.Util.as;
 import static io.crm.web.util.WebUtils.*;
 
 /**
@@ -58,7 +51,7 @@ public class ContactController {
         Route handler = router.get(MyUris.CONTACTS_GROUP_BY_COUNT.value).handler(ctx ->
             Promises.from(ctx.request().params())
                 .map(prms -> prms.contains("export") ? "export"
-                    : prms.contains("exportFlat") ? "exportFlat" : Decision.OTHERWISE)
+                    : prms.contains("exportFlat") ? "exportFlat" : Decision.CONTINUE)
                 .decide(dec -> dec)
                 .on("exportFlat", val -> Util.<Buffer>send(vertx.eventBus(),
                     GROUP_BY_COUNT_CONTACTS, toJson(ctx.request().params()))
@@ -98,7 +91,7 @@ public class ContactController {
 
                     .error(ctx::fail))
 
-                .otherwise(
+                .contnue(
                     val1 -> Util.<JsonArray>send(vertx.eventBus(), MyEvents.GROUP_BY_COUNT_CONTACTS, WebUtils.toJson(ctx.request().params()))
                         .map(Message::body)
                         .then(js -> ctx.response().putHeader(HttpHeaders.CONTENT_TYPE, Controllers.APPLICATION_JSON))
@@ -126,7 +119,7 @@ public class ContactController {
             ctx.request().params().remove("_");
 
             Promises.from(export)
-                .decide(expt -> expt ? "export" : Decision.OTHERWISE)
+                .decide(expt -> expt ? "export" : Decision.CONTINUE)
                 .on("export",
                     v -> Util.<Buffer>send(vertx.eventBus(),
                         MyEvents.FIND_ALL_CONTACTS,
@@ -137,7 +130,7 @@ public class ContactController {
                                 "attachment; filename=export.csv;"))
                         .then(m -> Controllers.exportLoop(m, ctx))
                         .error(ctx::fail))
-                .otherwise(
+                .contnue(
                     v -> Util.<JsonObject>send(vertx.eventBus(),
                         MyEvents.FIND_ALL_CONTACTS,
                         toJson(ctx.request().params()))
@@ -219,7 +212,7 @@ public class ContactController {
             Promises.from(ctx.request().params())
                 .then(prms -> prms.remove("_"))
                 .map(prms -> prms.contains("export"))
-                .decide(val -> val ? "export" : Decision.OTHERWISE)
+                .decide(val -> val ? "export" : Decision.CONTINUE)
                 .on("export", val1 -> Util.<JsonArray>send(vertx.eventBus(),
                     MyEvents.CONTACTS_SUMMARY_DETAILS,
                     toJson(ctx.request().params()))
@@ -248,7 +241,7 @@ public class ContactController {
                     })
                     .then(buffer -> ctx.response().end((Buffer) buffer))
                     .error(ctx::fail))
-                .otherwise(val2 -> Util.<JsonArray>send(vertx.eventBus(),
+                .contnue(val2 -> Util.<JsonArray>send(vertx.eventBus(),
                     MyEvents.CONTACTS_SUMMARY_DETAILS,
                     toJson(ctx.request().params()))
                     .map(Message::body)
